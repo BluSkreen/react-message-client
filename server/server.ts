@@ -75,6 +75,6 @@ wsServer.on("connection", function(connection) {
     // User disconnected
     connection.on('close', () => handleDisconnect(userId));
 
-    connection.send(`Hello, this is server.ts!`);
+    // connection.send(`Hello, this is server.ts!`);
 })
 

@@ -83,7 +83,7 @@ function Users() {
     });
     const users = Object.values(lastJsonMessage?.data.users || {});
     return (
-        <div>
+        <div className=' row-span-1'>
             {users.map(user => (
             <span key={user.username} className="mx-3">
                 {user.username}
@@ -93,15 +93,31 @@ function Users() {
 }
 
 function Document() {
+    const { lastJsonMessage, sendJsonMessage } = useWebSocket(WS_URL, {
+        share: true,
+        filter: isDocumentEvent
+    });
+
+    let html = lastJsonMessage?.data.editorContent ||"";
+
+    function handleHtmlChange(e) {
+        e.preventDefault;
+        sendJsonMessage({
+            type: "contentchange",
+            content: e.target.value
+        });
+    }
+
     return (
-        <div>
+        <div className='  border border-gray-100 bg-grey-800 row-span-5'>
+            <input type="text" value={html} onChange={handleHtmlChange}></input>
         </div>
     );
 }
 
 function EditorSection() {
     return (
-        <div>
+        <div className='w-screen h-screen bg-gray-800 grid grid-rows-6'>
             <Users/>
             <Document/>
         </div>
