@@ -1,0 +1,27 @@
+{
+  "name": "react-message-client",
+  "version": "1.0.0",
+  "description": "Learning how to use WebSocket with React",
+  "main": "server/server.ts",
+  "scripts": {
+    "start": "node server/server.ts",
+	"dev": "concurrently \"cd server && npm run watch\" \"cd client && npm run dev\"",
+	"install": "cd server && npm i && cd ../client && npm i",
+	"seed": "cd server && npm run seed",
+	"build": "cd client && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BluSkreen/react-message-client.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^5.1.0"
+  },
+  "bugs": {
+    "url": "https://github.com/BluSkreen/react-message-client/issues"
+  },
+  "homepage": "https://github.com/BluSkreen/react-message-client#readme"
+}
