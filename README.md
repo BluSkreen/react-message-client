@@ -1,5 +1,5 @@
 # react-message-client
-Learning how to use WebSocket with React
+Learning how to use ws and react-use-websocket libraries with React
 
 Goal
 
