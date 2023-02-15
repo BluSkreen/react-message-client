@@ -5,14 +5,14 @@ import './App.css'
 
 const WS_URL = 'ws://127.0.0.1:8000';
 
-function isUserEvent(message) {
+function isUserStatus(message) {
     let evt = JSON.parse(message.data);
-    return evt.type === "userevent";
+    return evt.type === "userstatus";
 }
 
-function isDocumentEvent(message) {
+function isGuess(message) {
     let evt = JSON.parse(message.data);
-    return evt.type === "contentchange";
+    return evt.type === "userguess";
 }
 
 function App() {
@@ -32,14 +32,13 @@ function App() {
         if(username && readyState === ReadyState.OPEN) {
             sendJsonMessage({
                 username,
-                type: "userevent"
+                type: "userstatus"
             });
-            console.log("json sent");
         }
     }, [username, sendJsonMessage, readyState]);
 
     return (
-        <div>
+        <div className='w-screen h-screen bg-gray-800 text-gray-200'>
             {username ? <EditorSection/> : <LoginSection onLogin={setUsername}/>}
         </div>
     )
@@ -66,12 +65,9 @@ function LoginSection({ onLogin }) {
             e.preventDefault;
             setUsername(e.target.value)
 
-            }} className="" />
+            }} className="text-black" />
       </label>
-          <button
-            type="button"
-            onClick={() => logInUser()}
-            className="">Join</button>
+      <button type="button" onClick={() => logInUser()} className="">Join</button>
     </div>
   );
 }
@@ -79,11 +75,11 @@ function LoginSection({ onLogin }) {
 function Users() {
     const { lastJsonMessage } = useWebSocket(WS_URL, {
         share:true,
-        filter: isUserEvent
+        filter: isUserStatus
     });
     const users = Object.values(lastJsonMessage?.data.users || {});
     return (
-        <div className=' row-span-1'>
+        <div className='row-span-1'>
             {users.map(user => (
             <span key={user.username} className="mx-3">
                 {user.username}
@@ -93,33 +89,66 @@ function Users() {
 }
 
 function Document() {
+    const [guess, setGuess] = useState('');
     const { lastJsonMessage, sendJsonMessage } = useWebSocket(WS_URL, {
         share: true,
-        filter: isDocumentEvent
     });
+    let allGuesses = Object.values(lastJsonMessage?.data.editorContent || []);
 
-    let html = lastJsonMessage?.data.editorContent ||"";
-
-    function handleHtmlChange(e) {
+    function handleGuess(e) {
         e.preventDefault;
         sendJsonMessage({
-            type: "contentchange",
-            content: e.target.value
+            type: "userguess",
+            content: guess
         });
+        console.log("guess sent");
     }
 
     return (
-        <div className='  border border-gray-100 bg-grey-800 row-span-5'>
-            <input type="text" value={html} onChange={handleHtmlChange}></input>
+        <div className='border border-gray-100 row-span-4'>
+            <div className="">
+              <label>
+                Guess:
+                <input type="text" name="username"  onInput={(e) => {
+                    e.preventDefault;
+                    setGuess(e.target.value);
+                }} className="text-black" />
+              </label>
+              <button type="button" onClick={(e) => handleGuess(e.target.value)} 
+                className="">Guess
+              </button>
+            </div>
+            <ul>
+                {allGuesses.map(g => (<li>{g}</li>))}
+            </ul>
+        </div>
+    );
+}
+
+function History() {
+    const { lastJsonMessage } = useWebSocket(WS_URL, {
+        share: true,
+    });
+
+    let history = Object.values(lastJsonMessage?.data.userActivity || []);
+
+    return (
+        <div className='row-span-1 mx-2 flex flex-col overflow-hidden'>
+            {history.map(event => (<span className=''>{event}</span>)).reverse()}
         </div>
     );
 }
 
 function EditorSection() {
+  useWebSocket(WS_URL, {
+    share: true,
+    filter: () => false
+  });
     return (
-        <div className='w-screen h-screen bg-gray-800 grid grid-rows-6'>
+        <div className='w-screen h-screen grid grid-rows-6'>
             <Users/>
             <Document/>
+            <History/>
         </div>
     );
 }

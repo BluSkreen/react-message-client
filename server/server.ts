@@ -14,14 +14,16 @@ server.listen(port, () => {
 
 const users: any = {};
 // The current editor content is maintained here.
-let editorContent: any = null;
+let editorContent: any = [];
+// The current word to be guessed 
+let secretWord:string = "hello";
 // User activity history.
 let userActivity: any = [];
 
 // Event types
 const typesDef = {
-  USER_EVENT: 'userevent',
-  CONTENT_CHANGE: 'contentchange'
+  USER_STATUS: 'userstatus',
+  USER_GUESS: 'userguess'
 }
 
 function broadcastMessage(json: any) {
@@ -38,20 +40,26 @@ function broadcastMessage(json: any) {
 function handleMessage(message: any, userId: any) {
   const dataFromClient = JSON.parse(message.toString());
   const json: any = { type: dataFromClient.type };
-  if (dataFromClient.type === typesDef.USER_EVENT) {
+  if (dataFromClient.type === typesDef.USER_STATUS) {
     users[userId] = dataFromClient;
     userActivity.push(`${dataFromClient.username} joined to edit the document`);
-    json.data = { users, userActivity };
-  } else if (dataFromClient.type === typesDef.CONTENT_CHANGE) {
-    editorContent = dataFromClient.content;
-    json.data = { editorContent, userActivity };
+    json.data = { users, editorContent, userActivity };
+  } else if (dataFromClient.type === typesDef.USER_GUESS) {
+    editorContent.push(dataFromClient.content);
+    if(dataFromClient.content === secretWord){
+        userActivity.push(`${users[userId].username} guessed the word!`);
+        editorContent = [];
+    }
+    json.data = { users, editorContent, userActivity };
+  } else {
+      json.data = { users, editorContent, userActivity };
   }
   broadcastMessage(json);
 }
 
 function handleDisconnect(userId: any) {
     console.log(`${userId} disconnected.`);
-    const json: any = { type: typesDef.USER_EVENT };
+    const json: any = { type: typesDef.USER_STATUS };
     const username = users[userId]?.username || userId;
     userActivity.push(`${username} left the document`);
     json.data = { users, userActivity };
@@ -62,15 +70,11 @@ function handleDisconnect(userId: any) {
 
 
 wsServer.on("connection", function(connection) {
-
     connection.on("error", console.error);
-
     const userId = uuidv4();
-    console.log("Recieved a new connection.");
-
     clients[userId] = connection;
-
     console.log(`${userId} connected.`);
+
     connection.on('message', (message: any) => handleMessage(message, userId));
     // User disconnected
     connection.on('close', () => handleDisconnect(userId));
