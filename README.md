@@ -7,5 +7,7 @@ Goal
 
 - connect to room ✅
 - show guesses ✅
-- server generates random word
+- server generates random word ✅
 - players guess word ✅ 
+- style ui 
+- rooms feature
