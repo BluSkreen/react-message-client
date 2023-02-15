@@ -2,6 +2,19 @@ import { WebSocket, WebSocketServer } from "ws";
 import { v4 as uuidv4 } from "uuid";
 import http from "http";
 
+import fs from 'fs';
+
+let words:any = [];
+let secretWord = "";
+// Return the contents of 'data.csv' as a string in the variable "data"
+// "utf8" encodes the raw buffer data in human-readable format
+fs.readFile('corncob_lowercase.txt', 'utf8', (error, data) => {
+  error ? console.error(error) : words = data.split("\r\n")
+  secretWord = words[Math.floor(Math.random() * words.length-1)];
+});
+// The current word to be guessed 
+
+
 const port = 8000;
 const server = http.createServer();
 const wsServer = new WebSocketServer({ server });
@@ -15,8 +28,6 @@ server.listen(port, () => {
 const users: any = {};
 // The current editor content is maintained here.
 let editorContent: any = [];
-// The current word to be guessed 
-let secretWord:string = "hello";
 // User activity history.
 let userActivity: any = [];
 
@@ -37,6 +48,31 @@ function broadcastMessage(json: any) {
   };
 }
 
+
+function matchingCount(count: any, strA: any, strB: any): any {
+    let len = strA.length;
+
+    console.log(strA);
+    console.log(strB);
+    for(let a = 0; a < len; a++) {
+        for(let b = 0; b < len; b++) {
+            if (strA[a] == strB[b]) {
+                strA.splice(a, 1);
+                strB.splice(b, 1)
+                // console.log(strA + " " + strB);
+                len--;
+                if (len == 0) return count;
+                return matchingCount((count + 1), strA, strB);
+            } else if (b == len-1) {
+                return count;
+            }
+        }
+    }
+    return count;
+};
+
+
+
 function handleMessage(message: any, userId: any) {
   const dataFromClient = JSON.parse(message.toString());
   const json: any = { type: dataFromClient.type };
@@ -45,10 +81,14 @@ function handleMessage(message: any, userId: any) {
     userActivity.push(`${dataFromClient.username} joined to edit the document`);
     json.data = { users, editorContent, userActivity };
   } else if (dataFromClient.type === typesDef.USER_GUESS) {
-    editorContent.push(dataFromClient.content);
     if(dataFromClient.content === secretWord){
         userActivity.push(`${users[userId].username} guessed the word!`);
+        secretWord = words[Math.floor(Math.random() * words.length-1)];
         editorContent = [];
+    } else {
+        // let compare:any = [`${secretWord}`, `${dataFromClient.content}`];
+        let count = matchingCount(0, `${secretWord}`.split(""), `${dataFromClient.content}`.split(""));
+        editorContent.push(`${dataFromClient.content} - correct letters: ${count}`);
     }
     json.data = { users, editorContent, userActivity };
   } else {
@@ -74,6 +114,7 @@ wsServer.on("connection", function(connection) {
     const userId = uuidv4();
     clients[userId] = connection;
     console.log(`${userId} connected.`);
+    console.log(secretWord);
 
     connection.on('message', (message: any) => handleMessage(message, userId));
     // User disconnected
