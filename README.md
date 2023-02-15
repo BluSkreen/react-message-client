@@ -8,4 +8,4 @@ Goal
 - connect to room ✅
 - show guesses ✅
 - server generates random word
-- players guess word 
+- players guess word ✅ 
